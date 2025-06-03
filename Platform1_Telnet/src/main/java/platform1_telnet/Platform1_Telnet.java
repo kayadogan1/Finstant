@@ -1,9 +1,9 @@
-package finstant.platform1_telnet;
+package platform1_telnet;
 
-import finstant.platform1_telnet.handlers.TelnetServerHandler;
-import finstant.platform1_telnet.helpers.ConfigurationHelper;
-import finstant.platform1_telnet.services.FinancialDataGenerator;
 import enums.TickerType;
+import platform1_telnet.handlers.TelnetServerHandler;
+import platform1_telnet.helpers.ConfigurationHelper;
+import platform1_telnet.services.FinancialDataGenerator;
 
 import java.io.IOException;
 import java.net.ServerSocket;

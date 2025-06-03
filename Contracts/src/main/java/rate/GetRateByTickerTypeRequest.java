@@ -1,4 +1,4 @@
-package Rate;
+package rate;
 
 import lombok.Getter;
 

@@ -1,8 +1,8 @@
 package com.dogankaya.FinanStream.abscraction;
 
-import Rate.Rate;
-import Rate.RateDto;
-import Rate.RateStatus;
+import rate.Rate;
+import rate.RateDto;
+import rate.RateStatus;
 
 public interface ICoordinatorCallback {
     void onConnect(String platformName, Boolean status);

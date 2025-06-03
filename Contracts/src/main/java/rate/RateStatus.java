@@ -1,4 +1,4 @@
-package Rate;
+package rate;
 
 public enum RateStatus {
     AVAILABLE,

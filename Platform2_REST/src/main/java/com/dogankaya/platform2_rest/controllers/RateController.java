@@ -1,7 +1,7 @@
 package com.dogankaya.platform2_rest.controllers;
 
-import Rate.GetRateByTickerTypeRequest;
-import Rate.RateDto;
+import rate.GetRateByTickerTypeRequest;
+import rate.RateDto;
 import com.dogankaya.platform2_rest.services.RateService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

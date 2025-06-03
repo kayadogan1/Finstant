@@ -1,11 +1,11 @@
-package finstant.platform1_telnet.handlers;
+package platform1_telnet.handlers;
 
-import Rate.RateDto;
+import rate.RateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import enums.TickerType;
-import finstant.platform1_telnet.helpers.ConfigurationHelper;
+import platform1_telnet.helpers.ConfigurationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
