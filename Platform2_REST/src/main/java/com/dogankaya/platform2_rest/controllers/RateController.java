@@ -1,8 +1,8 @@
-package com.dogankaya.platform2_rest.Controllers;
+package com.dogankaya.platform2_rest.controllers;
 
+import Rate.GetRateByTickerTypeRequest;
 import Rate.RateDto;
-import com.dogankaya.platform2_rest.Services.RateService;
-import enums.TickerType;
+import com.dogankaya.platform2_rest.services.RateService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +18,7 @@ public class RateController {
     }
 
     @GetMapping("/rates/{tickerType}")
-    public RateDto getRateByTickerType(TickerType tickerType) {
-        return rateService.getRateByTickerType(tickerType);
+    public RateDto getRateByTickerType(GetRateByTickerTypeRequest request) {
+        return rateService.getRateByTickerType(request);
     }
 }
