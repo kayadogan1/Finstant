@@ -1,4 +1,4 @@
-package finstant.platform1_telnet.helpers;
+package platform1_telnet.helpers;
 
 import enums.TickerType;
 import org.apache.commons.configuration.ConfigurationException;

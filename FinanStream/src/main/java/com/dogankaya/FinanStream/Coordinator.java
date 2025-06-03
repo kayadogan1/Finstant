@@ -1,8 +1,8 @@
 package com.dogankaya.FinanStream;
 
-import Rate.Rate;
-import Rate.RateDto;
-import Rate.RateStatus;
+import rate.Rate;
+import rate.RateDto;
+import rate.RateStatus;
 import com.dogankaya.FinanStream.abscraction.ICoordinatorCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

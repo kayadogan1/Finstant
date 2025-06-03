@@ -1,7 +1,7 @@
 package com.dogankaya.platform2_rest.services;
 
-import Rate.GetRateByTickerTypeRequest;
-import Rate.RateDto;
+import rate.GetRateByTickerTypeRequest;
+import rate.RateDto;
 import com.dogankaya.platform2_rest.helpers.ConfigurationHelper;
 import enums.TickerType;
 import org.springframework.scheduling.annotation.Scheduled;

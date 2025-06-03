@@ -1,7 +1,7 @@
 package com.dogankaya.FinanStream.handlers;
 
-import Rate.RateDto;
-import Rate.RateStatus;
+import rate.RateDto;
+import rate.RateStatus;
 import com.dogankaya.FinanStream.abscraction.ICoordinatorCallback;
 import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;

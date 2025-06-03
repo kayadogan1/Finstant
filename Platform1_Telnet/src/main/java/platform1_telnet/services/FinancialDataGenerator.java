@@ -1,9 +1,9 @@
-package finstant.platform1_telnet.services;
+package platform1_telnet.services;
 
-import Rate.RateDto;
+import rate.RateDto;
 import enums.TickerType;
-import finstant.platform1_telnet.helpers.ConfigurationHelper;
-import finstant.platform1_telnet.handlers.TelnetServerHandler;
+import platform1_telnet.helpers.ConfigurationHelper;
+import platform1_telnet.handlers.TelnetServerHandler;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
