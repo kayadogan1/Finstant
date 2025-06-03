@@ -1,0 +1,109 @@
+package com.dogankaya.FinanStream.handlers;
+
+import Rate.RateDto;
+import Rate.RateStatus;
+import com.dogankaya.FinanStream.abscraction.ICoordinatorCallback;
+import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+
+@Service
+public class Platform1_TelnetHandler implements IPlatformHandler {
+
+    @Value("${platform1.port}")
+    private int telnetPort;
+    @Value("${platform1.host}")
+    private String telnetHost;
+
+    private final ICoordinatorCallback callback;
+    private Socket socket;
+    private BufferedReader reader;
+    private BufferedWriter writer;
+
+    private final ObjectMapper objectMapper;
+
+    public Platform1_TelnetHandler(ICoordinatorCallback callback) {
+        this.callback = callback;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+    }
+
+    @Override
+    public void connect(String platformName, String userid, String password) {
+        try {
+            this.socket = new Socket(telnetHost, telnetPort);
+            this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+
+            new Thread(() -> {
+                try {
+                    callback.onConnect(platformName, true);
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        try {
+                            RateDto dto = objectMapper.readValue(line, RateDto.class);
+                            callback.onRateUpdate(platformName, dto.getRateName(), dto);
+                        } catch (Exception e) {
+                            System.err.println("JSON parse error: " + e.getMessage() + " | Line: " + line);
+                        }
+                    }
+                } catch (Exception e) {
+                    callback.onConnect(platformName, false);
+                }
+            }).start();
+
+        } catch (Exception e) {
+            callback.onConnect(platformName, false);
+        }
+    }
+
+    @Override
+    public void disConnect(String platformName, String userid, String password) {
+        try {
+            if (socket != null) socket.close();
+            if (reader != null) reader.close();
+            if (writer != null) writer.close();
+            callback.onDisConnect(platformName, true);
+        } catch (Exception e) {
+            callback.onDisConnect(platformName, false);
+        }
+    }
+
+    @Override
+    public void subscribe(String platformName, String rateName) {
+        try {
+            if (writer != null) {
+                writer.write("subscribe|" + rateName + "\n");
+                writer.flush();
+                callback.onRateAvailable(platformName,rateName,null);
+            } else {
+                System.err.println("Writer not initialized. Call connect() first.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void unSubscribe(String platformName, String rateName) {
+        try {
+            if (writer != null) {
+                writer.write("unsubscribe|" + rateName + "\n");
+                writer.flush();
+                callback.onRateStatus(platformName,rateName, RateStatus.NOT_AVAILABLE);
+            } else {
+                System.err.println("Writer not initialized. Call connect() first.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
