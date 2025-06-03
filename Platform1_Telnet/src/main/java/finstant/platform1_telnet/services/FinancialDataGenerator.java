@@ -1,12 +1,12 @@
 package finstant.platform1_telnet.services;
 
+import Rate.RateDto;
 import enums.TickerType;
 import finstant.platform1_telnet.helpers.ConfigurationHelper;
 import finstant.platform1_telnet.handlers.TelnetServerHandler;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,11 +27,11 @@ public class FinancialDataGenerator {
         initializeLastValues();
     }
 
-    public void startGenerating(Consumer<String> dataConsumer) {
+    public void startGenerating(Consumer<RateDto> dataConsumer) {
         long interval = ConfigurationHelper.getDataGeneratorIntervalMs();
         scheduler.scheduleAtFixedRate(() -> {
             for (TickerType ticker : supportedTickers) {
-                String generatedData = generateMarketData(ticker);
+                RateDto generatedData = generateMarketData(ticker);
 
                 dataConsumer.accept(generatedData);
                 TelnetServerHandler.distributeMarketData(generatedData);
@@ -40,18 +40,17 @@ public class FinancialDataGenerator {
         }, 0, interval, TimeUnit.MILLISECONDS);
     }
 
-    private String generateMarketData(TickerType ticker) {
+    private RateDto generateMarketData(TickerType ticker) {
         BigDecimal lastBid = lastBidValues.get(ticker);
 
         BigDecimal bid   = lastBid.add(getRandomDelta(2.0));
         BigDecimal ask   = bid.add(getRandomDelta(0.5).abs());
         lastBidValues.put(ticker, bid);
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        return String.format("%s| Bid: %.5f| Ask: %.5f| Timestamp: %s",
-                ticker.getValue(),
-                bid,
-                ask,
-                timestamp);
+        return RateDto.builder()
+                .rateName(ticker.getValue())
+                .ask(ask)
+                .bid(bid)
+                .rateUpdateTime(LocalDateTime.now()).build();
     }
 
     private BigDecimal getRandomDelta(double maxChange) {

@@ -1,5 +1,9 @@
 package finstant.platform1_telnet.handlers;
 
+import Rate.RateDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import enums.TickerType;
 import finstant.platform1_telnet.helpers.ConfigurationHelper;
 import org.slf4j.Logger;
@@ -83,7 +87,7 @@ public class TelnetServerHandler implements Runnable {
         String actualTickerValue = tickerEnum.getValue();
 
         if (subscribedTickers.add(actualTickerValue)) {
-            subscribers.computeIfAbsent(actualTickerValue, k -> Collections.synchronizedSet(new HashSet<>())).add(this);
+            subscribers.computeIfAbsent(actualTickerValue, _ -> Collections.synchronizedSet(new HashSet<>())).add(this);
             sendResponse("Subscribed to " + actualTickerValue);
             logger.info("Client {} subscribed to {}", clientSocket.getInetAddress(), actualTickerValue);
         } else {
@@ -122,15 +126,20 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
-    public static void distributeMarketData(String marketData) {
-        String[] parts = marketData.split("\\|");
-        if (parts.length > 0) {
-            String ticker = parts[0];
-            Set<TelnetServerHandler> tickerSubscribers = subscribers.get(ticker);
-            if (tickerSubscribers != null) {
+    public static void distributeMarketData(RateDto data) {
+        String ticker = data.getRateName();
+
+        Set<TelnetServerHandler> tickerSubscribers = subscribers.get(ticker);
+        if (tickerSubscribers != null) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+            try {
+                String marketDataJson = objectMapper.writeValueAsString(data);
                 for (TelnetServerHandler handler : tickerSubscribers) {
-                    handler.sendResponse(marketData);
+                    handler.sendResponse(marketDataJson);
                 }
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
             }
         }
     }

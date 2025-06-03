@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Coordinator implements ICoordinatorCallback {
-	private static Logger logger = LoggerFactory.getLogger(Coordinator.class);
+	private final static Logger logger = LoggerFactory.getLogger(Coordinator.class);
 
 	public static void main(String[] args) {
 		SpringApplication.run(Coordinator.class, args);
