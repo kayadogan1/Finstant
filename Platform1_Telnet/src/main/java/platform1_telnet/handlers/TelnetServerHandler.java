@@ -87,7 +87,7 @@ public class TelnetServerHandler implements Runnable {
         String actualTickerValue = tickerEnum.getValue();
 
         if (subscribedTickers.add(actualTickerValue)) {
-            subscribers.computeIfAbsent(actualTickerValue, _ -> Collections.synchronizedSet(new HashSet<>())).add(this);
+            subscribers.computeIfAbsent(actualTickerValue, k -> Collections.synchronizedSet(new HashSet<>())).add(this);
             sendResponse("Subscribed to " + actualTickerValue);
             logger.info("Client {} subscribed to {}", clientSocket.getInetAddress(), actualTickerValue);
         } else {
