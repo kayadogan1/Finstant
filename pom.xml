@@ -10,9 +10,11 @@
     <packaging>pom</packaging>
     <modules>
         <module>Domain</module>
-        <module>Platform1_Telnet</module>
         <module>Consts</module>
         <module>Contracts</module>
+        <module>Platform1_Telnet</module>
+        <module>Platform2_REST</module>
+        <module>FinanStream</module>
     </modules>
 
     <properties>
