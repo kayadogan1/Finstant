@@ -15,6 +15,7 @@ import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class Platform1_TelnetHandler implements IPlatformHandler {
 
@@ -46,7 +47,6 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
             this.socket = new Socket(telnetHost, telnetPort);
             this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-
             new Thread(() -> {
                 try {
                     callback.onConnect(platformName, true);
@@ -60,6 +60,10 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
                         }
                     }
                 } catch (Exception e) {
+                    if(e instanceof SocketException) {
+                        logger.info("Socket Closed");
+                        return;
+                    }
                     logger.error("Error in client thread: {}", e.getMessage(), e);
                     callback.onConnect(platformName, false);
                 }
