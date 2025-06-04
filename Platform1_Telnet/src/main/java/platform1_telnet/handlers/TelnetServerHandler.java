@@ -1,13 +1,13 @@
 package platform1_telnet.handlers;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rate.RateDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import enums.TickerType;
 import platform1_telnet.helpers.ConfigurationHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TelnetServerHandler implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(TelnetServerHandler.class);
+    private static final Logger logger = LogManager.getLogger(TelnetServerHandler.class);
     private static final TickerType[] supportedTickers = ConfigurationHelper.getSupportedTickers();
     private final Socket clientSocket;
     private PrintWriter out;
@@ -139,7 +139,7 @@ public class TelnetServerHandler implements Runnable {
                     handler.sendResponse(marketDataJson);
                 }
             } catch (JsonProcessingException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
         }
     }

@@ -65,8 +65,7 @@ public class RateService {
 
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
-            // DEBUG log
-            logger.debug("Generated {} | Bid: {} | Ask: {} | Timestamp: {}",
+            logger.info("Generated {} | Bid: {} | Ask: {} | Timestamp: {}",
                     ticker.getValue(),
                     bid,
                     ask,

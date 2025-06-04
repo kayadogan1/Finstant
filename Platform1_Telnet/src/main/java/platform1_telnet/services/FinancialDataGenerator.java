@@ -37,7 +37,7 @@ public class FinancialDataGenerator {
                 RateDto generatedData = generateMarketData(ticker);
                 dataConsumer.accept(generatedData);
                 TelnetServerHandler.distributeMarketData(generatedData);
-                logger.debug("Generated market data: {}", generatedData);
+                logger.info("Generated market data: {}", generatedData);
             }
         }, 0, interval, TimeUnit.MILLISECONDS);
     }
