@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +24,7 @@ public class RateService {
 
     private static final Logger logger = LogManager.getLogger(RateService.class);
 
-    private Map<TickerType, BigDecimal> lastBidValues;
+    private final Map<TickerType, BigDecimal> lastBidValues;
     private final TickerType[] supportedTickers;
     private final Random random = new Random();
 
@@ -39,14 +41,19 @@ public class RateService {
         }
     }
 
-    public RateDto getRateByTickerType(GetRateByTickerTypeRequest request) {
-        TickerType tickerType = TickerType.fromString(request.getValue());
-        assert tickerType != null;
-        return RateDto.builder()
-                .rateName(tickerType.getValue())
-                .ask(lastBidValues.get(tickerType))
-                .bid(lastBidValues.get(tickerType))
-                .build();
+    public List<RateDto> getRatesByTickerTypeList(List<GetRateByTickerTypeRequest> request) {
+        List<RateDto> rateDtos = new ArrayList<>();
+        request.forEach(req ->
+        {
+            TickerType t = TickerType.fromString(req.getValue());
+            assert t != null;
+            rateDtos.add(RateDto.builder()
+                    .rateName(t.getValue())
+                    .ask(lastBidValues.get(t))
+                    .bid(lastBidValues.get(t))
+                    .build());
+        });
+        return rateDtos;
     }
 
     private BigDecimal getRandomDelta(double maxChange) {
