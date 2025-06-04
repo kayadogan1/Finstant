@@ -1,5 +1,7 @@
 package platform1_telnet.services;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import rate.RateDto;
 import enums.TickerType;
 import platform1_telnet.helpers.ConfigurationHelper;
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class FinancialDataGenerator {
+    private static final Logger logger = LogManager.getLogger(FinancialDataGenerator.class);
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final Random random = new Random();
     private final TickerType[] supportedTickers;
@@ -32,10 +35,9 @@ public class FinancialDataGenerator {
         scheduler.scheduleAtFixedRate(() -> {
             for (TickerType ticker : supportedTickers) {
                 RateDto generatedData = generateMarketData(ticker);
-
                 dataConsumer.accept(generatedData);
                 TelnetServerHandler.distributeMarketData(generatedData);
-                System.out.println("DEBUG: Generated " + generatedData);
+                logger.debug("Generated market data: {}", generatedData);
             }
         }, 0, interval, TimeUnit.MILLISECONDS);
     }
