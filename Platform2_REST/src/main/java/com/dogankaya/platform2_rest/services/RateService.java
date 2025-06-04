@@ -14,8 +14,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 @Service
 public class RateService {
+
+    private static final Logger logger = LogManager.getLogger(RateService.class);
 
     private Map<TickerType, BigDecimal> lastBidValues;
     private final TickerType[] supportedTickers;
@@ -57,12 +62,15 @@ public class RateService {
             BigDecimal bid = lastBid.add(getRandomDelta(2.0));
             BigDecimal ask = bid.add(getRandomDelta(0.5).abs());
             lastBidValues.put(ticker, bid);
+
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            System.out.println("DEBUG: Generated " + String.format("%s| Bid: %.5f| Ask: %.5f| Timestamp: %s",
+
+            // DEBUG log
+            logger.debug("Generated {} | Bid: {} | Ask: {} | Timestamp: {}",
                     ticker.getValue(),
                     bid,
                     ask,
-                    timestamp));
+                    timestamp);
         }
     }
 }

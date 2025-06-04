@@ -6,6 +6,8 @@ import com.dogankaya.FinanStream.abscraction.ICoordinatorCallback;
 import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ import java.net.Socket;
 @Service
 public class Platform1_TelnetHandler implements IPlatformHandler {
 
+    private static final Logger logger = LogManager.getLogger(Platform1_TelnetHandler.class);
+
     @Value("${platform1.port}")
     private int telnetPort;
     @Value("${platform1.host}")
@@ -27,7 +31,6 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
     private Socket socket;
     private BufferedReader reader;
     private BufferedWriter writer;
-
     private final ObjectMapper objectMapper;
 
     public Platform1_TelnetHandler(ICoordinatorCallback callback) {
@@ -52,15 +55,17 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
                             RateDto dto = objectMapper.readValue(line, RateDto.class);
                             callback.onRateUpdate(platformName, dto.getRateName(), dto);
                         } catch (Exception e) {
-                            System.err.println("JSON parse error: " + e.getMessage() + " | Line: " + line);
+                            logger.error("JSON parse error: {} | Line: {}", e.getMessage(), line, e);
                         }
                     }
                 } catch (Exception e) {
+                    logger.error("Error in client thread: {}", e.getMessage(), e);
                     callback.onConnect(platformName, false);
                 }
             }).start();
 
         } catch (Exception e) {
+            logger.error("Error connecting to Telnet server: {}", e.getMessage(), e);
             callback.onConnect(platformName, false);
         }
     }
@@ -73,6 +78,7 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
             if (writer != null) writer.close();
             callback.onDisConnect(platformName, true);
         } catch (Exception e) {
+            logger.error("Error during disconnect: {}", e.getMessage(), e);
             callback.onDisConnect(platformName, false);
         }
     }
@@ -83,12 +89,12 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
             if (writer != null) {
                 writer.write("subscribe|" + rateName + "\n");
                 writer.flush();
-                callback.onRateAvailable(platformName,rateName,null);
+                callback.onRateAvailable(platformName, rateName, null);
             } else {
-                System.err.println("Writer not initialized. Call connect() first.");
+                logger.warn("Writer not initialized. Call connect() first.");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error subscribing to rate {}: {}", rateName, e.getMessage(), e);
         }
     }
 
@@ -98,12 +104,12 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
             if (writer != null) {
                 writer.write("unsubscribe|" + rateName + "\n");
                 writer.flush();
-                callback.onRateStatus(platformName,rateName, RateStatus.NOT_AVAILABLE);
+                callback.onRateStatus(platformName, rateName, RateStatus.NOT_AVAILABLE);
             } else {
-                System.err.println("Writer not initialized. Call connect() first.");
+                logger.warn("Writer not initialized. Call connect() first.");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error unsubscribing from rate {}: {}", rateName, e.getMessage(), e);
         }
     }
 }
