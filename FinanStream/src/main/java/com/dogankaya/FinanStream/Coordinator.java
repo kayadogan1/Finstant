@@ -1,8 +1,11 @@
 package com.dogankaya.FinanStream;
 
+import com.dogankaya.FinanStream.abscraction.ICoordinatorActions;
 import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
 import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
 import com.dogankaya.FinanStream.helpers.HandlerClassLoader;
+import enums.PlatformName;
+import enums.TickerType;
 import rate.Rate;
 import rate.RateDto;
 import rate.RateStatus;
@@ -15,7 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.util.List;
 
 @SpringBootApplication
-public class Coordinator implements ICoordinatorCallback {
+public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	private static final Logger logger = LogManager.getLogger(Coordinator.class);
 	private final List<IPlatformHandler> platformHandlers;
 
@@ -25,11 +28,6 @@ public class Coordinator implements ICoordinatorCallback {
 
 	Coordinator(FinanStreamProperties finanStreamProperties) {
 		platformHandlers = HandlerClassLoader.getHandlerInstances(finanStreamProperties.getHandlerClassNames(), this, finanStreamProperties);
-		platformHandlers.forEach(platformHandler ->
-			{
-				platformHandler.connect(platformHandler.getPlatformName(), "", "");
-				platformHandler.subscribe(platformHandler.getPlatformName(), "PF1_USDTRY");
-			});
 	}
 
 	@Override
@@ -66,5 +64,50 @@ public class Coordinator implements ICoordinatorCallback {
 	@Override
 	public void onRateUpdate(String platformName, String rateName, RateDto rateDto) {
 		logger.info("{} from {} updated to {}", rateName, platformName, rateDto);
+	}
+
+	@Override
+	public void subscribe(TickerType tickerType) {
+		IPlatformHandler platformHandler = getPlatformHandler(tickerType.getPlatformName());
+		if (platformHandler != null) {
+			platformHandler.subscribe(tickerType.getPlatformName(), tickerType.getValue());
+		}
+	}
+
+	@Override
+	public void connect(PlatformName platformName) {
+		IPlatformHandler platformHandler = getPlatformHandler(platformName.getName());
+		if (platformHandler != null) {
+			platformHandler.connect(platformName.getName(), "", "");
+		}
+	}
+
+	@Override
+	public void unsubscribe(TickerType tickerType) {
+		IPlatformHandler platformHandler = getPlatformHandler(tickerType.getPlatformName());
+		if (platformHandler != null) {
+			platformHandler.unSubscribe(tickerType.getPlatformName(), tickerType.getValue());
+		}
+	}
+
+	@Override
+	public void disconnect(PlatformName platformName) {
+		IPlatformHandler platformHandler = getPlatformHandler(platformName.getName());
+		if (platformHandler != null) {
+			platformHandler.disConnect(platformName.getName(),"" ,"");
+		}
+	}
+
+	private IPlatformHandler getPlatformHandler(String platformName) {
+		IPlatformHandler platformHandler = platformHandlers.stream()
+				.filter(p -> p.getPlatformName().equals(platformName))
+				.findFirst()
+				.orElse(null);
+
+		if(platformHandler == null) {
+			logger.error("Platform {} not found", platformName);
+		}
+
+		return platformHandler;
 	}
 }
