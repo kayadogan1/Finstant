@@ -1,5 +1,6 @@
 package com.dogankaya.FinanStream.handlers;
 
+import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
 import rate.RateDto;
 import rate.RateStatus;
 import com.dogankaya.FinanStream.abscraction.ICoordinatorCallback;
@@ -8,8 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,15 +16,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
-@Service
 public class Platform1_TelnetHandler implements IPlatformHandler {
 
     private static final Logger logger = LogManager.getLogger(Platform1_TelnetHandler.class);
 
-    @Value("${platform1.port}")
-    private int telnetPort;
-    @Value("${platform1.host}")
-    private String telnetHost;
+    private final int telnetPort;
+    private final String telnetHost;
+    private final String platformName;
 
     private final ICoordinatorCallback callback;
     private Socket socket;
@@ -33,7 +30,11 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
     private BufferedWriter writer;
     private final ObjectMapper objectMapper;
 
-    public Platform1_TelnetHandler(ICoordinatorCallback callback) {
+    public Platform1_TelnetHandler(ICoordinatorCallback callback, FinanStreamProperties finanStreamProperties) {
+        FinanStreamProperties.PlatformProperties platformProperties = finanStreamProperties.getPlatformProperties("platform1");
+        this.telnetPort = platformProperties.getPort();
+        this.telnetHost = platformProperties.getHost();
+        this.platformName = platformProperties.getName();
         this.callback = callback;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
@@ -111,5 +112,10 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
         } catch (Exception e) {
             logger.error("Error unsubscribing from rate {}: {}", rateName, e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String getPlatformName() {
+        return this.platformName;
     }
 }

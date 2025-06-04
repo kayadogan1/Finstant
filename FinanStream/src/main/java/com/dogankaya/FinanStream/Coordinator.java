@@ -1,5 +1,8 @@
 package com.dogankaya.FinanStream;
 
+import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
+import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
+import com.dogankaya.FinanStream.helpers.HandlerClassLoader;
 import rate.Rate;
 import rate.RateDto;
 import rate.RateStatus;
@@ -9,12 +12,24 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.util.List;
+
 @SpringBootApplication
 public class Coordinator implements ICoordinatorCallback {
 	private static final Logger logger = LogManager.getLogger(Coordinator.class);
+	private final List<IPlatformHandler> platformHandlers;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Coordinator.class, args);
+	}
+
+	Coordinator(FinanStreamProperties finanStreamProperties) {
+		platformHandlers = HandlerClassLoader.getHandlerInstances(finanStreamProperties.getHandlerClassNames(), this, finanStreamProperties);
+		platformHandlers.forEach(platformHandler ->
+			{
+				platformHandler.connect(platformHandler.getPlatformName(), "", "");
+				platformHandler.subscribe(platformHandler.getPlatformName(), "PF1_USDTRY");
+			});
 	}
 
 	@Override
