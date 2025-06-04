@@ -3,6 +3,7 @@ package com.dogankaya.FinanStream.handlers;
 import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
 
 public class Platform2_RESTHandler implements IPlatformHandler {
+
     @Override
     public void connect(String platformName, String userid, String password) {
 
@@ -21,5 +22,10 @@ public class Platform2_RESTHandler implements IPlatformHandler {
     @Override
     public void unSubscribe(String platformName, String rateName) {
 
+    }
+
+    @Override
+    public String getPlatformName() {
+        return "";
     }
 }
