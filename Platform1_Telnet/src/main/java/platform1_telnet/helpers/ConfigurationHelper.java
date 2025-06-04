@@ -3,14 +3,14 @@ package platform1_telnet.helpers;
 import enums.TickerType;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public class ConfigurationHelper {
-    private static final Logger logger = LoggerFactory.getLogger(ConfigurationHelper.class);
+    private static final Logger logger = LogManager.getLogger(ConfigurationHelper.class);
     private static final PropertiesConfiguration config;
 
     static {
