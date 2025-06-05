@@ -4,7 +4,10 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+/**
+ * Data transfer object (DTO) representing a rate with bid and ask prices
+ * and the time when the rate was last updated.
+ */
 @Builder
 @Getter
 @Setter

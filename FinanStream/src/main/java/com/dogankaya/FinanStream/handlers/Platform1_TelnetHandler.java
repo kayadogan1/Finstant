@@ -16,7 +16,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketException;
-
+/**
+ * Implementation of IPlatformHandler for handling Telnet-based platform connection.
+ * Connects to a Telnet server, listens for JSON-encoded rate updates, and sends subscribe/unsubscribe commands.
+ */
 public class Platform1_TelnetHandler implements IPlatformHandler {
 
     private static final Logger logger = LogManager.getLogger(Platform1_TelnetHandler.class);
@@ -31,6 +34,11 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
     private BufferedWriter writer;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructor for Platform1_TelnetHandler
+     * @param callback callback interface to report events
+     * @param finanStreamProperties application properties containing connection info
+     */
     public Platform1_TelnetHandler(ICoordinatorCallback callback, FinanStreamProperties finanStreamProperties) {
         FinanStreamProperties.PlatformProperties platformProperties = finanStreamProperties.getPlatformProperties("platform1");
         this.telnetPort = platformProperties.getPort();
@@ -40,7 +48,13 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
-
+    /**
+     * Connects to the Telnet server and starts a listener thread for incoming rate updates.
+     *
+     * @param platformName platform name to connect
+     * @param userid      user identifier (not used in this implementation)
+     * @param password    password (not used in this implementation)
+     */
     @Override
     public void connect(String platformName, String userid, String password) {
         try {
@@ -75,6 +89,12 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
         }
     }
 
+    /**
+     * Disconnect from the telnet server and runs callback
+     * @param platformName the platform name
+     * @param userid       user identifier
+     * @param password     user password
+     */
     @Override
     public void disConnect(String platformName, String userid, String password) {
         try {
@@ -88,6 +108,11 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
         }
     }
 
+    /**
+     * sends a subscribe command for the given rateName to the telnet server
+     * @param platformName the platform name
+     * @param rateName     the name of the rate to subscribe to
+     */
     @Override
     public void subscribe(String platformName, String rateName) {
         try {
@@ -102,7 +127,12 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
             logger.error("Error subscribing to rate {}: {}", rateName, e.getMessage(), e);
         }
     }
-
+    /**
+     * Sends an unsubscribe command for the given rateName to the Telnet server.
+     *
+     * @param platformName platform name
+     * @param rateName    rate to unsubscribe from
+     */
     @Override
     public void unSubscribe(String platformName, String rateName) {
         try {
@@ -118,6 +148,10 @@ public class Platform1_TelnetHandler implements IPlatformHandler {
         }
     }
 
+    /**
+     * returns value of platform name
+     * @return the string value of platform name
+     */
     @Override
     public String getPlatformName() {
         return this.platformName;

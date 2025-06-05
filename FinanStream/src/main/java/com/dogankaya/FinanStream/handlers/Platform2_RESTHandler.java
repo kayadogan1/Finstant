@@ -15,7 +15,22 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+/**
+ * The {@code Platform2_RESTHandler} class implements REST-based data retrieval for Platform2.
+ * <p>
+ * This handler periodically polls a REST API endpoint to fetch rate updates for active subscriptions
+ * and notifies the higher-level coordinator via callback.
+ * <p>
+ * Active subscriptions are managed in a thread-safe manner and persisted in Redis to maintain state across restarts.
+ * <p>
+ * HTTP requests are sent using Java's {@link java.net.http.HttpClient}, and JSON responses are
+ * deserialized into {@code RateDto} objects using Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper}.
+ * <p>
+ * Implements the {@link IPlatformHandler} interface.
+ *
+ * @see IPlatformHandler
+ * @see ICoordinatorCallback
+ */
 public class Platform2_RESTHandler implements IPlatformHandler {
     private static final Logger logger = LogManager.getLogger(Platform2_RESTHandler.class);
 
@@ -28,7 +43,12 @@ public class Platform2_RESTHandler implements IPlatformHandler {
     private final ICoordinatorCallback callback;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
-
+    /**
+     * Constructs a new Platform2_RESTHandler instance.
+     *
+     * @param callback          The callback interface for rate updates and connection events.
+     * @param finanStreamProperties Configuration properties containing platform details.
+     */
     public Platform2_RESTHandler(ICoordinatorCallback callback, FinanStreamProperties finanStreamProperties) {
         FinanStreamProperties.PlatformProperties platformProperties = finanStreamProperties.getPlatformProperties("platform2");
         this.platformName = platformProperties.getName();
@@ -39,7 +59,15 @@ public class Platform2_RESTHandler implements IPlatformHandler {
                 .connectTimeout(java.time.Duration.ofSeconds(5))
                 .build();
     }
-
+    /**
+     * Establishes connection to the platform and starts the polling thread.
+     * <p>
+     * If already connected, this method will not start a new thread.
+     *
+     * @param platformName The name of the platform to connect to.
+     * @param userid      The user ID (currently unused).
+     * @param password    The password (currently unused).
+     */
     @Override
     public void connect(String platformName, String userid, String password) {
         if (restThread != null && restThread.isAlive()) {
@@ -94,7 +122,15 @@ public class Platform2_RESTHandler implements IPlatformHandler {
         restThread.start();
         callback.onConnect(platformName, true);
     }
-
+    /**
+     * Disconnects from the platform and stops the polling thread.
+     * <p>
+     * Clears active subscriptions from Redis and notifies callback.
+     *
+     * @param platformName The name of the platform to disconnect from.
+     * @param userid      The user ID (currently unused).
+     * @param password    The password (currently unused).
+     */
     @Override
     public void disConnect(String platformName, String userid, String password) {
         running = false;
@@ -110,6 +146,13 @@ public class Platform2_RESTHandler implements IPlatformHandler {
         callback.onDisConnect(platformName, true);
     }
 
+    /**
+     * Subscribe to updates for the specified rate
+     * if already subscribed this method does nothing
+     * Add the rate name to the Redis persistent subscription set.
+     * @param platformName the platform name
+     * @param rateName     the name of the rate to subscribe to
+     */
     @Override
     public void subscribe(String platformName, String rateName) {
         if(activeSubscriptions.containsKey(rateName)) {
@@ -120,6 +163,11 @@ public class Platform2_RESTHandler implements IPlatformHandler {
         logger.info("Subscribed to {}", rateName);
     }
 
+    /**
+     * Unsubscribe from updates fot he specified rate
+     * @param platformName the platform name
+     * @param rateName     the name of the rate to unsubscribe from
+     */
     @Override
     public void unSubscribe(String platformName, String rateName) {
 
@@ -133,6 +181,10 @@ public class Platform2_RESTHandler implements IPlatformHandler {
 
     }
 
+    /**
+     * returns the platform name
+     * @return value of platform
+     */
     @Override
     public String getPlatformName() {
         return platformName;
