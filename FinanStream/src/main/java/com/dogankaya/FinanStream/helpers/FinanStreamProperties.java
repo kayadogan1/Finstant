@@ -18,8 +18,9 @@ import java.util.Map;
 public class FinanStreamProperties {
 
     private List<String> handlerClassNames;
-
     private Map<String, PlatformProperties> platforms;
+    private String ratesConfigPath;
+
     /**
      * Returns the list of handler class names.
      *
@@ -52,6 +53,15 @@ public class FinanStreamProperties {
     public void setPlatforms(Map<String, PlatformProperties> platforms) {
         this.platforms = platforms;
     }
+
+    public String getRatesConfigPath() {
+        return ratesConfigPath;
+    }
+
+    public void setRatesConfigPath(String ratesConfigPath) {
+        this.ratesConfigPath = ratesConfigPath;
+    }
+
     /**
      * Retrieves the properties for a specific platform by name.
      *
