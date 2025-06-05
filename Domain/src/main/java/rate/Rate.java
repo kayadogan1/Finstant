@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Represents a financial rate entity with bid and ask prices,timestamps and an identifier
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
