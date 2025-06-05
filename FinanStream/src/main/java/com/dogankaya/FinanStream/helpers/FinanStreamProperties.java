@@ -14,6 +14,8 @@ public class FinanStreamProperties {
 
     private Map<String, PlatformProperties> platforms;
 
+    private String ratesConfigPath;
+
     public List<String> getHandlerClassNames() {
         return handlerClassNames;
     }
@@ -28,6 +30,14 @@ public class FinanStreamProperties {
 
     public void setPlatforms(Map<String, PlatformProperties> platforms) {
         this.platforms = platforms;
+    }
+
+    public String getRatesConfigPath() {
+        return ratesConfigPath;
+    }
+
+    public void setRatesConfigPath(String ratesConfigPath) {
+        this.ratesConfigPath = ratesConfigPath;
     }
 
     public PlatformProperties getPlatformProperties(String platformName) {
