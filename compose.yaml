@@ -24,3 +24,39 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  finanstream:
+    build:
+      context: ./FinanStream
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - FINANSTREAM_PLATFORMS_PLATFORM1_HOST=platform1
+      - FINANSTREAM_PLATFORMS_PLATFORM2_HOST=platform2
+    networks:
+      - finstant-network
+
+  platform1_telnet:
+    container_name: platform1
+    build:
+      context: ./Platform1_Telnet
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - finstant-network
+
+  platform2_rest:
+    container_name: platform2
+    build:
+      context: ./Platform2_REST
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - finstant-network
+
+networks:
+  finstant-network:
+    driver: bridge
