@@ -32,7 +32,7 @@ public class Platform2_RESTHandler implements IPlatformHandler {
     public Platform2_RESTHandler(ICoordinatorCallback callback, FinanStreamProperties finanStreamProperties) {
         FinanStreamProperties.PlatformProperties platformProperties = finanStreamProperties.getPlatformProperties("platform2");
         this.platformName = platformProperties.getName();
-        this.API_REQUEST_URL = "http://" + platformProperties.getHost() + ":" + platformProperties.getPort() + "/api/rates/";
+        this.API_REQUEST_URL = "http://" + platformProperties.getHost() + ":" + platformProperties.getPort() + "/api/rates/%7BtickerType%7D";
         this.callback = callback;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         this.httpClient = HttpClient.newBuilder()
@@ -59,7 +59,7 @@ public class Platform2_RESTHandler implements IPlatformHandler {
                     }
                     StringBuilder url = new StringBuilder(API_REQUEST_URL + "?");
                     for(String rateName : activeSubscriptions.keySet()) {
-                        url.append(rateName)
+                        url
                                 .append("request=")
                                 .append(rateName)
                                 .append("&");

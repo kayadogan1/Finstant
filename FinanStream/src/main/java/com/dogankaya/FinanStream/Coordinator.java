@@ -6,7 +6,8 @@ import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
 import com.dogankaya.FinanStream.helpers.HandlerClassLoader;
 import enums.PlatformName;
 import enums.TickerType;
-import rate.Rate;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import rate.RateDto;
 import rate.RateStatus;
 import com.dogankaya.FinanStream.abscraction.ICoordinatorCallback;
@@ -21,14 +22,18 @@ import java.util.List;
 public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	private static final Logger logger = LogManager.getLogger(Coordinator.class);
 	private final List<IPlatformHandler> platformHandlers;
+	private final RedisTemplate<String, Object> redisTemplate;
+	private final HashOperations<String, String, RateDto> hashOperations;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Coordinator.class, args);
 	}
 
-	Coordinator(FinanStreamProperties finanStreamProperties) {
+	Coordinator(FinanStreamProperties finanStreamProperties, RedisTemplate<String, Object> redisTemplate) {
 		platformHandlers = HandlerClassLoader.getHandlerInstances(finanStreamProperties.getHandlerClassNames(), this, finanStreamProperties);
-	}
+        this.redisTemplate = redisTemplate;
+		this.hashOperations = redisTemplate.opsForHash();
+    }
 
 	@Override
 	public void onConnect(String platformName, Boolean status) {
@@ -49,10 +54,10 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	}
 
 	@Override
-	public void onRateAvailable(String platformName, String rateName, Rate rate) {
+	public void onRateAvailable(String platformName, String rateName, RateDto rateDto) {
 		logger.info("{} is available from {}", rateName, platformName);
-		if (rate != null) {
-			logger.info("Rate: {}", rate);
+		if (rateDto != null) {
+			logger.info("Rate: {}", rateDto);
 		}
 	}
 
@@ -64,6 +69,9 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	@Override
 	public void onRateUpdate(String platformName, String rateName, RateDto rateDto) {
 		logger.info("{} from {} updated to {}", rateName, platformName, rateDto);
+		hashOperations.put(TickerType.getHashNameFromPlatformName(platformName),
+				rateName,
+				rateDto);
 	}
 
 	@Override
@@ -88,6 +96,8 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 		if (platformHandler != null) {
 			platformHandler.unSubscribe(tickerType.getPlatformName(), tickerType.getValue());
 		}
+		hashOperations.delete(TickerType.getHashNameFromPlatformName(tickerType.getPlatformName()),
+				tickerType.getValue());
 	}
 
 	@Override
@@ -96,6 +106,8 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 		if (platformHandler != null) {
 			platformHandler.disConnect(platformName.getName(),"" ,"");
 		}
+		hashOperations.delete(TickerType.getHashNameFromPlatformName(platformName.getName()),
+                (Object[]) TickerType.getTickersFromPlatformName(platformName.getName()));
 	}
 
 	private IPlatformHandler getPlatformHandler(String platformName) {

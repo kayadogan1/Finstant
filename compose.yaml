@@ -1,8 +1,11 @@
 services:
   redis:
+    container_name: redis
     image: 'redis:latest'
     ports:
-      - '6379'
+      - "6379:6379"
+    networks:
+      - finstant-network
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -11,6 +14,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - finstant-network
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -24,6 +29,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - finstant-network
 
   finanstream:
     build:
@@ -34,6 +41,7 @@ services:
     environment:
       - FINANSTREAM_PLATFORMS_PLATFORM1_HOST=platform1
       - FINANSTREAM_PLATFORMS_PLATFORM2_HOST=platform2
+      - SPRING_DATA_REDIS_HOST=redis
     networks:
       - finstant-network
 
