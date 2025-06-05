@@ -9,19 +9,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rate.RateDto;
 import rate.RateStatus;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Platform2_RESTHandler implements IPlatformHandler {
     private static final Logger logger = LogManager.getLogger(Platform2_RESTHandler.class);
 
     private final String platformName;
     private final String API_REQUEST_URL;
-    private String queryParams = "";
-
+    private final Map<String,Boolean> activeSubscriptions = new ConcurrentHashMap<>();
     private volatile boolean running = false;
     private Thread restThread;
 
@@ -32,8 +32,7 @@ public class Platform2_RESTHandler implements IPlatformHandler {
     public Platform2_RESTHandler(ICoordinatorCallback callback, FinanStreamProperties finanStreamProperties) {
         FinanStreamProperties.PlatformProperties platformProperties = finanStreamProperties.getPlatformProperties("platform2");
         this.platformName = platformProperties.getName();
-        // DÜZELTME: Port ve Host yer değiştirmişti, doğru sıraya koyuldu!
-        this.API_REQUEST_URL = "http://" + platformProperties.getHost() + ":" + platformProperties.getPort() + "/api/rates/%7BtickerType%7D?";
+        this.API_REQUEST_URL = "http://" + platformProperties.getHost() + ":" + platformProperties.getPort() + "/api/rates/";
         this.callback = callback;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         this.httpClient = HttpClient.newBuilder()
@@ -54,35 +53,32 @@ public class Platform2_RESTHandler implements IPlatformHandler {
 
             while (running) {
                 try {
-                    if (queryParams.isEmpty()) {
-                        Thread.sleep(1000); // boşsa CPU’yu yormasın
+                    if (activeSubscriptions.isEmpty()) {
+                        Thread.sleep(1000);
                         continue;
                     }
-
-                    String url = API_REQUEST_URL + queryParams;
-                    logger.debug("Sending GET request to: {}", url);
-
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create(url))
-                            .timeout(java.time.Duration.ofSeconds(5))
-                            .GET()
-                            .build();
-
-                    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-                    int responseCode = response.statusCode();
-                    if (responseCode == 200) {
-                        String responseBody = response.body();
-                        RateDto[] rateDtos = objectMapper.readValue(responseBody, RateDto[].class);
-
-                        for (RateDto dto : rateDtos) {
-                            callback.onRateUpdate(platformName, dto.getRateName(), dto);
-                        }
-                    } else {
-                        logger.warn("REST response code: {}", responseCode);
+                    StringBuilder url = new StringBuilder(API_REQUEST_URL + "?");
+                    for(String rateName : activeSubscriptions.keySet()) {
+                        url.append(rateName)
+                                .append("request=")
+                                .append(rateName)
+                                .append("&");
                     }
 
-                    Thread.sleep(1000); // istekler arasında bekleme
+                    logger.info("Sending GET request to {}", url.toString());
+                    HttpRequest request = HttpRequest.newBuilder(URI.create(url.toString())).GET().build();
+                    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    int responseCode = response.statusCode();
+                    if (responseCode != 200) {
+                        logger.warn("REST status code for {}, url:{}", response.body(), url.toString());
+                    }else{
+                        String responseBody = response.body();
+                        RateDto[] rateDtos = objectMapper.readValue(responseBody, RateDto[].class);
+                        for (RateDto rateDto : rateDtos) {
+                            callback.onRateUpdate(platformName, rateDto.getRateName(), rateDto);
+                        }
+                    }
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     logger.info("REST polling thread interrupted.");
                     Thread.currentThread().interrupt();
@@ -102,37 +98,39 @@ public class Platform2_RESTHandler implements IPlatformHandler {
     @Override
     public void disConnect(String platformName, String userid, String password) {
         running = false;
-        if (restThread != null) {
+        if(restThread != null && restThread.isAlive()) {
             restThread.interrupt();
-            try {
+            try{
                 restThread.join(1000);
-            } catch (InterruptedException e) {
+            }catch(InterruptedException e){
                 logger.warn("Interrupted while stopping the REST thread.", e);
             }
         }
-        queryParams = "";
+        activeSubscriptions.clear();
         callback.onDisConnect(platformName, true);
     }
 
     @Override
     public void subscribe(String platformName, String rateName) {
-        if (queryParams.contains(rateName)) {
+        if(activeSubscriptions.containsKey(rateName)) {
             logger.info("Already Subscribed {}", rateName);
             return;
         }
-        queryParams += "request=" + rateName + "&";
+        activeSubscriptions.put(rateName, true);
         logger.info("Subscribed to {}", rateName);
     }
 
     @Override
     public void unSubscribe(String platformName, String rateName) {
-        if (!queryParams.contains(rateName)) {
-            logger.info("Already Unsubscribed {}", rateName);
+
+        if (!activeSubscriptions.containsKey(rateName)) {
+            logger.info("Already Unsubscribed from {}", rateName);
             return;
         }
-        queryParams = queryParams.replace("request=" + rateName + "&", "");
+        activeSubscriptions.remove(rateName);
         callback.onRateStatus(platformName, rateName, RateStatus.NOT_AVAILABLE);
         logger.info("Unsubscribed from {}", rateName);
+
     }
 
     @Override
