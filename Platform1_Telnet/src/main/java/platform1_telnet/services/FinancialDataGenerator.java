@@ -105,7 +105,6 @@ public class FinancialDataGenerator {
      */
     private void initializeLastValues() {
         for (TickerType ticker : supportedTickers) {
-            // ConfigurationHelper içinde başlangıç değerini getiriyoruz
             lastBidValues.put(ticker, ConfigurationHelper.getTickerInitialValueFromTickerType(ticker));
         }
     }
