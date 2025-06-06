@@ -13,7 +13,6 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import rate.RateDto;
 
@@ -93,7 +92,15 @@ public class CalculatorService {
         try {
             return hashOperations.entries("raw_rates");
         } catch (Exception e) {
-            throw new RuntimeException("Redis'ten rate verisi okunamadı", e);
+            throw new RuntimeException("Cannot read raw_rates from redis", e);
+        }
+    }
+
+    public Map<String, RateDto> loadCalculatedRatesFromRedis() {
+        try {
+            return hashOperations.entries("calculated_rates");
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot read calculated_rates from redis", e);
         }
     }
 
@@ -118,6 +125,7 @@ public class CalculatorService {
             }
             if(calculated.containsKey(dependency)){
                 RateDto dto = objectMapper.convertValue(calculated.get(dependency), RateDto.class);
+                binding.setVariable(dependency, dto.getAsk());
                 binding.setVariable(dependency + "_ask", dto.getAsk());
                 binding.setVariable(dependency + "_bid", dto.getAsk());
                 continue;
@@ -168,23 +176,47 @@ public class CalculatorService {
             binding.setVariable(key, result);
         }
         calculated.put(key, dto);
+        logger.info("Key: {}.bid, Calculated: {}", key, dto.getBid());
+        logger.info("Key: {}.ask, Calculated: {}", key, dto.getAsk());
         hashOperations.put("calculated_rates", baseKey, dto);
     }
 
-    @Scheduled(fixedRate = 1000)
-    public Map<String, RateDto> calculateAll() {
+    public void calculateAffectedRates(RateDto rateDto) {
         Map<String, RateDto> raw = loadRawRatesFromRedis();
-        Map<String, RateDto> calculated = new HashMap<>();
+        Map<String, RateDto> calculated = loadCalculatedRatesFromRedis();
         Binding binding = new Binding();
         shell = new GroovyShell(binding);
-
-        for (String key : dependsOn.keySet()) {
-            resolve(key, raw, calculated, binding);
+        for(String key : dependsOn.keySet()){
+            if (isAffectedRate(key, rateDto, calculated)) {
+                resolve(key, raw, calculated, binding);
+            }
         }
-        calculated.forEach((key, value) ->{
-                        logger.info("Key: {}.ask, Calculated: {}", key, value.getAsk());
-                        logger.info("Key: {}.bid, Calculated: {}", key, value.getBid());
-        });
-        return calculated;
+    }
+
+    private boolean isAffectedRate(String key, RateDto rateDto, Map<String, RateDto> calculated) {
+        if(key.equals(rateDto.getRateName())){
+            calculated.remove(key);
+            return true;
+        }
+        List<String> dependencies = dependsOn.get(key);
+        if(dependencies == null)
+            return false;
+        for(String dependency : dependencies){
+            if(dependency.equals(rateDto.getRateName())){
+                calculated.remove(key);
+                return true;
+            }else{
+                List<String> childDependencies = dependsOn.get(dependency);
+                if(childDependencies == null)
+                    continue;
+                for(String childDep : childDependencies){
+                    if(isAffectedRate(childDep, rateDto, calculated)){
+                        calculated.remove(key);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

@@ -1,5 +1,6 @@
 package com.dogankaya.platform2_rest.services;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
 import rate.GetRateByTickerTypeRequest;
 import rate.RateDto;
 import com.dogankaya.platform2_rest.helpers.ConfigurationHelper;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Service
+@EnableScheduling
 public class RateService {
 
     private static final Logger logger = LogManager.getLogger(RateService.class);
