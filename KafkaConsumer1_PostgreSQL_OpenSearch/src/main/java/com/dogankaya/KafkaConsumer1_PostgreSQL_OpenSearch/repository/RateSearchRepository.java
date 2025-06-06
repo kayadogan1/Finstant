@@ -4,5 +4,5 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 import rate.RateDocument;
 
 
-public interface RateSearchRepository extends ElasticsearchRepository<RateDocument, String> {
+public interface RateSearchRepository extends ElasticsearchRepository<RateDocument, Integer> {
 }

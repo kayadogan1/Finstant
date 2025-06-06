@@ -52,11 +52,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.dogankaya</groupId>
 			<artifactId>Contracts</artifactId>
 			<version>1.0-SNAPSHOT</version>
@@ -72,18 +67,14 @@
 	<build>
 		<plugins>
 			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.11.0</version>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>3.2.5</version>
 				<configuration>
-					<annotationProcessorPaths>
-						<path>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-							<version>1.18.30</version>
-						</path>
-					</annotationProcessorPaths>
+					<mainClass>com.dogankaya.KafkaConsumer1_PostgreSQL_OpenSearch.KafkaConsumer1PostgreSqlOpenSearchApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>KafkaConsumer1_PostgreSQL_OpenSearch</finalName>
 	</build>
 </project>

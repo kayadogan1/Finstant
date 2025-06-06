@@ -11,12 +11,16 @@ import rate.RateDocument;
 import rate.RateDto;
 import rate.Rate;
 
+import java.time.format.DateTimeFormatter;
+
 @Service
 @EnableScheduling
 public class RateConsumerService {
     private final Logger logger = LogManager.getLogger();
     private final RateRepository rateRepository;
     private final RateSearchRepository rateSearchRepository;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+
 
     public RateConsumerService(RateRepository rateRepository, RateSearchRepository rateSearchRepository) {
         this.rateRepository = rateRepository;
@@ -30,6 +34,7 @@ public class RateConsumerService {
                 .ask(rateDto.getAsk())
                 .bid(rateDto.getBid())
                 .rateUpdateTime(rateDto.getRateUpdateTime())
+                .dbUpdateTime(rateDto.getRateUpdateTime())
                 .build();
         rateRepository.save(rate);
 
@@ -38,7 +43,8 @@ public class RateConsumerService {
                 .rateName(rateDto.getRateName())
                 .ask(rateDto.getAsk())
                 .bid(rateDto.getBid())
-                .rateUpdateTime(rateDto.getRateUpdateTime())
+                .rateUpdateTime(rateDto.getRateUpdateTime().format(formatter))
+                .dbUpdateTime(rateDto.getRateUpdateTime().format(formatter))
                 .build();
         rateSearchRepository.save(rateDocument);
         logger.info("Rate:{} saved and sended opensearch", rate.getRateName());

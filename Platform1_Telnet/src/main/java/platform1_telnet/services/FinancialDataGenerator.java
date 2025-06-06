@@ -9,6 +9,7 @@ import platform1_telnet.handlers.TelnetServerHandler;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,7 +80,7 @@ public class FinancialDataGenerator {
                 .rateName(ticker.getValue())
                 .ask(ask)
                 .bid(bid)
-                .rateUpdateTime(LocalDateTime.now()).build();
+                .rateUpdateTime(LocalDateTime.now(ZoneOffset.UTC)).build();
     }
     /**
      * Generates a random {@link BigDecimal} delta (change) within a specified maximum.
