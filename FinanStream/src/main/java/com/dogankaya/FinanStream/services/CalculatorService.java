@@ -52,7 +52,9 @@ public class CalculatorService {
 
     @PostConstruct
     public void init() throws Exception {
+        logger.info("Initializing CalculatorService");
         loadFormulasFromConfig();
+
     }
 
     private void loadFormulasFromConfig() throws Exception {
@@ -101,8 +103,12 @@ public class CalculatorService {
         if(key.endsWith("_ask") || key.endsWith("_bid")){
             baseKey = key.substring(0, key.indexOf("_"));
         }
-        List<String> dependencies = dependsOn.get(baseKey);
 
+        List<String> dependencies = dependsOn.get(baseKey);
+        if(dependencies == null){
+            logger.warn("No dependencies found for key:  {}",baseKey);
+            return;
+        }
         for(String dependency : dependencies){
             if(raw.containsKey(dependency)){
                 RateDto dto = objectMapper.convertValue(raw.get(dependency), RateDto.class);
@@ -161,6 +167,8 @@ public class CalculatorService {
             dto.setBid(result);
             binding.setVariable(key, result);
         }
+        calculated.put(key, dto);
+        hashOperations.put("calculated_rates", baseKey, dto);
     }
 
     @Scheduled(fixedRate = 1000)
