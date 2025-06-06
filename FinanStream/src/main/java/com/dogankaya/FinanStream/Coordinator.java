@@ -4,6 +4,7 @@ import com.dogankaya.FinanStream.abscraction.ICoordinatorActions;
 import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
 import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
 import com.dogankaya.FinanStream.helpers.HandlerClassLoader;
+import com.dogankaya.FinanStream.kafka.KafkaProducer;
 import com.dogankaya.FinanStream.services.CalculatorService;
 import enums.PlatformName;
 import enums.TickerType;
@@ -36,6 +37,7 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	private final List<IPlatformHandler> platformHandlers;
 	private final HashOperations<String, String, RateDto> hashOperations;
 	private final CalculatorService calculatorService;
+	private final KafkaProducer kafkaProducer;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Coordinator.class, args);
@@ -46,10 +48,11 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	 * @param finanStreamProperties Properties for configuring the financial stream.
 	 * @param redisTemplate         Redis template for caching .
 	 */
-	Coordinator(FinanStreamProperties finanStreamProperties, RedisTemplate<String, Object> redisTemplate, CalculatorService calculatorService) {
+	Coordinator(FinanStreamProperties finanStreamProperties, RedisTemplate<String, Object> redisTemplate, CalculatorService calculatorService, KafkaProducer kafkaProducer) {
 		platformHandlers = HandlerClassLoader.getHandlerInstances(finanStreamProperties.getHandlerClassNames(), this, finanStreamProperties);
 		this.hashOperations = redisTemplate.opsForHash();
         this.calculatorService = calculatorService;
+        this.kafkaProducer = kafkaProducer;
     }
 
 	/**
@@ -119,6 +122,7 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 		hashOperations.put(TickerType.getHashNameFromPlatformName(platformName),
 				rateName,
 				rateDto);
+		kafkaProducer.sendRate("rate-topic", rateDto);
 		calculatorService.calculateAffectedRates(rateDto);
 	}
 	/**

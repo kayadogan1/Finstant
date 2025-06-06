@@ -32,6 +32,53 @@ services:
     networks:
       - finstant-network
 
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      POSTGRES_DB: finanstream
+      POSTGRES_USER: finanstream_user
+      POSTGRES_PASSWORD: finanstream_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - finstant-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - finstant-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.9.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    networks:
+      - finstant-network
+
   finanstream:
     build:
       context: ./FinanStream
@@ -68,6 +115,32 @@ services:
     networks:
       - finstant-network
 
+  kafka_consumer_1:
+    container_name: kafka_consumer_1
+    build:
+      context: ./KafkaConsumer1_PostgrelSQL_OpenSearch
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - postgres
+      - elasticsearch
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finanstream
+      SPRING_DATASOURCE_USERNAME: finanstream_user
+      SPRING_DATASOURCE_PASSWORD: finanstream_pass
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_ELASTICSEARCH_URIS: http://opensearch:9200
+      SPRING_ELASTICSEARCH_USERNAME:
+      SPRING_ELASTICSEARCH_PASSWORD:
+    networks:
+      - finstant-network
+
 networks:
   finstant-network:
     driver: bridge
+
+volumes:
+  pgdata:
+  elasticsearch-data:

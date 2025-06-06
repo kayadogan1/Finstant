@@ -53,6 +53,7 @@ public class RateService {
                     .rateName(t.getValue())
                     .ask(lastBidValues.get(t))
                     .bid(lastBidValues.get(t))
+                    .rateUpdateTime(LocalDateTime.now())
                     .build());
         });
         return rateDtos;

@@ -127,7 +127,7 @@ public class CalculatorService {
                 RateDto dto = objectMapper.convertValue(calculated.get(dependency), RateDto.class);
                 binding.setVariable(dependency, dto.getAsk());
                 binding.setVariable(dependency + "_ask", dto.getAsk());
-                binding.setVariable(dependency + "_bid", dto.getAsk());
+                binding.setVariable(dependency + "_bid", dto.getBid());
                 continue;
             }
             if(formulas.containsKey(dependency)){

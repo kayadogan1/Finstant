@@ -11,14 +11,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Represents a financial rate entity with bid and ask prices,timestamps and an identifier
+ * Represents a financial rate document with bid and ask prices,timestamps and an identifier for elasticsearch
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-public class Rate{
+@Document(indexName = "rate-index")
+public class RateDocument{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
