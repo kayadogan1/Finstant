@@ -20,6 +20,7 @@
         <module>Platform1_Telnet</module>
         <module>Platform2_REST</module>
         <module>FinanStream</module>
+        <module>KafkaConsumer1_PostgreSQL_OpenSearch</module>
     </modules>
 
     <properties>
