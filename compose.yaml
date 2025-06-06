@@ -38,7 +38,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
+    volumes:
+      - ./config/rates.properties:/app/rates.properties
     environment:
+      - RATES_CONFIG_PATH=file:/app/rates.properties
       - FINANSTREAM_PLATFORMS_PLATFORM1_HOST=platform1
       - FINANSTREAM_PLATFORMS_PLATFORM2_HOST=platform2
       - SPRING_DATA_REDIS_HOST=redis
