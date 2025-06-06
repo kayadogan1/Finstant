@@ -4,6 +4,7 @@ import com.dogankaya.FinanStream.abscraction.ICoordinatorActions;
 import com.dogankaya.FinanStream.abscraction.IPlatformHandler;
 import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
 import com.dogankaya.FinanStream.helpers.HandlerClassLoader;
+import com.dogankaya.FinanStream.services.CalculatorService;
 import enums.PlatformName;
 import enums.TickerType;
 import org.springframework.data.redis.core.HashOperations;
@@ -33,8 +34,8 @@ import java.util.List;
 public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	private static final Logger logger = LogManager.getLogger(Coordinator.class);
 	private final List<IPlatformHandler> platformHandlers;
-	private final RedisTemplate<String, Object> redisTemplate;
 	private final HashOperations<String, String, RateDto> hashOperations;
+	private final CalculatorService calculatorService;
 
 	public static void main(String[] args) {
 		SpringApplication.run(Coordinator.class, args);
@@ -45,10 +46,10 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 	 * @param finanStreamProperties Properties for configuring the financial stream.
 	 * @param redisTemplate         Redis template for caching .
 	 */
-	Coordinator(FinanStreamProperties finanStreamProperties, RedisTemplate<String, Object> redisTemplate) {
+	Coordinator(FinanStreamProperties finanStreamProperties, RedisTemplate<String, Object> redisTemplate, CalculatorService calculatorService) {
 		platformHandlers = HandlerClassLoader.getHandlerInstances(finanStreamProperties.getHandlerClassNames(), this, finanStreamProperties);
-        this.redisTemplate = redisTemplate;
 		this.hashOperations = redisTemplate.opsForHash();
+        this.calculatorService = calculatorService;
     }
 
 	/**
@@ -118,6 +119,7 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 		hashOperations.put(TickerType.getHashNameFromPlatformName(platformName),
 				rateName,
 				rateDto);
+		calculatorService.calculateAffectedRates(rateDto);
 	}
 	/**
 	 * Subscribes to a specific ticker type on the platform.
@@ -154,8 +156,6 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 		if (platformHandler != null) {
 			platformHandler.unSubscribe(tickerType.getPlatformName(), tickerType.getValue());
 		}
-		hashOperations.delete(TickerType.getHashNameFromPlatformName(tickerType.getPlatformName()),
-				tickerType.getValue());
 	}
 
 	/**
@@ -168,8 +168,6 @@ public class Coordinator implements ICoordinatorCallback, ICoordinatorActions {
 		if (platformHandler != null) {
 			platformHandler.disConnect(platformName.getName(),"" ,"");
 		}
-		hashOperations.delete(TickerType.getHashNameFromPlatformName(platformName.getName()),
-                (Object[]) TickerType.getTickersFromPlatformName(platformName.getName()));
 	}
 	/**
 	 * Retrieves the appropriate platform handler for the given platform name.
