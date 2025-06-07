@@ -1,0 +1,37 @@
+{
+  "mappings": {
+    "properties": {
+      "_class": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "ask": {
+        "type": "scaled_float",
+        "scaling_factor": 1000000000
+      },
+      "bid": {
+        "type": "scaled_float",
+        "scaling_factor": 1000000000
+      },
+      "dbUpdateTime": {
+        "type": "date",
+        "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS||yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSXXX||strict_date_optional_time||epoch_millis"
+      },
+      "id": {
+        "type": "integer"
+      },
+      "rateName": {
+        "type": "keyword"
+      },
+      "rateUpdateTime": {
+        "type": "date",
+        "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS||yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSXXX||strict_date_optional_time||epoch_millis"
+      }
+    }
+  }
+}
