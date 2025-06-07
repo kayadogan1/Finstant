@@ -1,6 +1,7 @@
 package com.dogankaya.FinanStream.services;
 
 import com.dogankaya.FinanStream.helpers.FinanStreamProperties;
+import com.dogankaya.FinanStream.kafka.KafkaProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import groovy.lang.Binding;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class CalculatorService {
     private final Logger logger = LogManager.getLogger();
     private final HashOperations<String, String, RateDto> hashOperations;
+    private final KafkaProducer kafkaProducer;
 
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
@@ -38,11 +40,12 @@ public class CalculatorService {
 
     private GroovyShell shell;
 
-    public CalculatorService(RedisTemplate<String, Object> redisTemplate,
+    public CalculatorService(RedisTemplate<String, Object> redisTemplate, KafkaProducer kafkaProducer,
                              ObjectMapper objectMapper,
                              ResourceLoader resourceLoader,
                              FinanStreamProperties finanStreamProperties) {
         this.hashOperations = redisTemplate.opsForHash();
+        this.kafkaProducer = kafkaProducer;
         this.objectMapper = objectMapper;
         this.objectMapper.registerModule(new JavaTimeModule());
         this.resourceLoader = resourceLoader;
@@ -151,7 +154,7 @@ public class CalculatorService {
                 bid = (BigDecimal) shell.evaluate(formulas_bid);
             }
         }catch (Exception e){
-            logger.error("Ticker {} cannot calculated cause: {}", key, e.getMessage());
+            logger.warn("Ticker {} cannot calculated cause: {}", key, e.getMessage());
             return;
         }
 
@@ -176,6 +179,7 @@ public class CalculatorService {
             binding.setVariable(key, result);
         }
         calculated.put(key, dto);
+        kafkaProducer.sendRate("rate-topic", dto);
         logger.info("Key: {}.bid, Calculated: {}", key, dto.getBid());
         logger.info("Key: {}.ask, Calculated: {}", key, dto.getAsk());
         hashOperations.put("calculated_rates", baseKey, dto);
