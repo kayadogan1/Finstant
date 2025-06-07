@@ -35,7 +35,6 @@ public class TelnetServerHandler implements Runnable {
     private final Set<String> subscribedTickers = Collections.synchronizedSet(new HashSet<>());
     private static final ConcurrentHashMap<String, Set<TelnetServerHandler>> subscribers = new ConcurrentHashMap<>();
 
-    // Tek seferlik ObjectMapper
     private static final ObjectMapper objectMapper = new ObjectMapper();
     static {
         JavaTimeModule javaTimeModule = new JavaTimeModule();
@@ -174,7 +173,7 @@ public class TelnetServerHandler implements Runnable {
         try {
             if (in != null) in.close();
             if (out != null) out.close();
-            if (clientSocket != null) clientSocket.close();
+            clientSocket.close();
         } catch (IOException e) {
             logger.error("Error closing client resources", e);
         }
