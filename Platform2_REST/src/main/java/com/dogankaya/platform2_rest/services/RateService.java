@@ -51,7 +51,7 @@ public class RateService {
             assert t != null;
             rateDtos.add(RateDto.builder()
                     .rateName(t.getValue())
-                    .ask(lastBidValues.get(t))
+                    .ask(lastBidValues.get(t).multiply(BigDecimal.valueOf(1.10)))
                     .bid(lastBidValues.get(t))
                     .rateUpdateTime(LocalDateTime.now())
                     .build());
