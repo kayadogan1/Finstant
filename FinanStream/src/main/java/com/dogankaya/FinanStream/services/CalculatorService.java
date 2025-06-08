@@ -38,8 +38,6 @@ public class CalculatorService {
     private final Map<String, String> formulas = new HashMap<>();
     private final Map<String, List<String>> dependsOn = new HashMap<>();
 
-    private GroovyShell shell;
-
     public CalculatorService(RedisTemplate<String, Object> redisTemplate, KafkaProducer kafkaProducer,
                              ObjectMapper objectMapper,
                              ResourceLoader resourceLoader,
@@ -108,7 +106,7 @@ public class CalculatorService {
     }
 
 
-    public void resolve(String key, Map<String, RateDto> raw, Map<String, RateDto> calculated, Binding binding) {
+    public void resolve(String key, Map<String, RateDto> raw, Map<String, RateDto> calculated, GroovyShell shell) {
         String baseKey = key;
         if(key.endsWith("_ask") || key.endsWith("_bid")){
             baseKey = key.substring(0, key.indexOf("_"));
@@ -121,20 +119,17 @@ public class CalculatorService {
         }
         for(String dependency : dependencies){
             if(raw.containsKey(dependency)){
-                RateDto dto = objectMapper.convertValue(raw.get(dependency), RateDto.class);
-                binding.setVariable(dependency + "_ask", dto.getAsk());
-                binding.setVariable(dependency + "_bid", dto.getBid());
                 continue;
             }
             if(calculated.containsKey(dependency)){
                 RateDto dto = objectMapper.convertValue(calculated.get(dependency), RateDto.class);
-                binding.setVariable(dependency, dto.getAsk());
-                binding.setVariable(dependency + "_ask", dto.getAsk());
-                binding.setVariable(dependency + "_bid", dto.getBid());
+                shell.setVariable(dependency, dto.getAsk());
+                shell.setVariable(dependency + "_ask", dto.getAsk());
+                shell.setVariable(dependency + "_bid", dto.getBid());
                 continue;
             }
             if(formulas.containsKey(dependency)){
-                resolve(dependency, raw, calculated, binding);
+                resolve(dependency, raw, calculated, shell);
             }
         }
         String formula = formulas.get(key);
@@ -161,22 +156,22 @@ public class CalculatorService {
         RateDto dto = calculated.get(key);
         if(dto == null){
             dto = new RateDto();
-            calculated.put(baseKey, dto);
             dto.setRateName(baseKey);
             dto.setRateUpdateTime(LocalDateTime.now());
+            calculated.put(baseKey, dto);
         }
         if(bid != null){
             dto.setBid(bid);
-            binding.setVariable(key, bid);
+            shell.setVariable(key, bid);
         }
         if(ask != null){
             dto.setAsk(ask);
-            binding.setVariable(key, ask);
+            shell.setVariable(key, ask);
         }
         if(result != null){
             dto.setAsk(result);
             dto.setBid(result);
-            binding.setVariable(key, result);
+            shell.setVariable(key, result);
         }
         calculated.put(key, dto);
         kafkaProducer.sendRate("rate-topic", dto);
@@ -188,13 +183,20 @@ public class CalculatorService {
     public void calculateAffectedRates(RateDto rateDto) {
         Map<String, RateDto> raw = loadRawRatesFromRedis();
         Map<String, RateDto> calculated = loadCalculatedRatesFromRedis();
+        List<String> toCalculateList = new ArrayList<>();
         Binding binding = new Binding();
-        shell = new GroovyShell(binding);
+        for(Map.Entry<String, RateDto> r: raw.entrySet()){
+            RateDto dto = objectMapper.convertValue(r.getValue(), RateDto.class);
+            binding.setVariable(dto.getRateName() + "_ask", dto.getAsk());
+            binding.setVariable(dto.getRateName() + "_bid", dto.getBid());
+        }
+        GroovyShell shell = new GroovyShell(binding);
         for(String key : dependsOn.keySet()){
             if (isAffectedRate(key, rateDto, calculated)) {
-                resolve(key, raw, calculated, binding);
+                toCalculateList.add(key);
             }
         }
+        toCalculateList.forEach(key -> resolve(key, raw, calculated, shell));
     }
 
     private boolean isAffectedRate(String key, RateDto rateDto, Map<String, RateDto> calculated) {
@@ -216,6 +218,7 @@ public class CalculatorService {
                 for(String childDep : childDependencies){
                     if(isAffectedRate(childDep, rateDto, calculated)){
                         calculated.remove(key);
+                        calculated.remove(dependency);
                         return true;
                     }
                 }
