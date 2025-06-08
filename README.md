@@ -3,6 +3,7 @@ Finstant, finansal piyasa simülasyonu ve gerçek zamanlı veri üretimi sağlay
 
 ## Uygulama Nasıl Çalıştırılır
 **Komut satırında çalıştırmadan önce dockerın açık olması gerekiyor.**
+**elk_init.sh dosyası eğer ki CRLF ise hata verebilmektedir hata durumunda CRLF'den LF dosya sonu formatına dönüştürülebilir**
 >git clone https://github.com/kayadogan1/Finstant
 
 >cd Finstant
@@ -18,7 +19,8 @@ Bu adımlardan sonra uygulamanın çalışıyor olması gerekir.
 * Her bir connect olunan platform farklı bir thread üzerinde çalışır bu sayede multi-threadingli bir yapı sağlanmış olur.
 * Ana uygulamadaki onRateUpdate metodu tetiklendiğinde güncellenen kurlar kafka kuyruğuna gönderilerek yayınlanmaktadır.
 * Kafka consumer uygulaması kafkadaki rate topic'ini dinleyerek gelen kurları postgresql'e ve elasticSearche göndermektedir.
-* Groovy kütüphanesi kullanılarak runtimeda döviz kurlarının dinamik hesaplaması yapılmaktadır.
+* Groovy ve exp4j kütüphaneleri kullanılarak runtimeda döviz kurlarının dinamik hesaplaması yapılmaktadır.
+* Konfigürasyon aracılığı ile hesaplama yapılacak kütüphane seçilebilir groovy veya exp4j seçenekleri mevcut.
 * Docker imageleri için Config/rate.properties dosyasında formüller override edilebilir.
 * Kur güncellenmesinde etkilenen diğer kurlar recursive olarak algılanıp recursive olarak hesaplanmaktador.
 * Veri tekrarına düşmemek için domain,consts ve contracts modülleri eklendi.
