@@ -14,6 +14,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * {@code Exp4JCalculationEngine} is an implementation of {@link ICalculationEngine} that uses the
+ * exp4j library to compile and evaluate mathematical expressions dynamically.
+ *
+ * <p>This class caches compiled expressions for reuse and manages variables in a thread-safe manner
+ * using a ConcurrentHashMap. Variables in expressions are identified via regex and registered
+ * with the exp4j {@link ExpressionBuilder}.</p>
+ *
+ * <p>The engine supports setting variables, initializing with a set of variable bindings,
+ * and evaluating expressions with optional per-evaluation variable overrides.</p>
+ */
 public class Exp4JCalculationEngine implements ICalculationEngine {
     private static final Logger logger = LoggerFactory.getLogger(Exp4JCalculationEngine.class);
 
@@ -23,11 +34,21 @@ public class Exp4JCalculationEngine implements ICalculationEngine {
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
 
+    /**
+     * Returns the name of this calculation engine.
+     *
+     * @return the string "exp4j"
+     */
     @Override
     public String getName() {
         return "exp4j";
     }
 
+    /**
+     * Initializes the calculation engine with a set of initial variable bindings.
+     *
+     * @param initialBindings a map of variable names to their initial values
+     */
     @Override
     public void initialize(Map<String, Object> initialBindings) {
         this.currentExp4jContext = new ConcurrentHashMap<>(initialBindings);
@@ -35,6 +56,21 @@ public class Exp4JCalculationEngine implements ICalculationEngine {
         logger.info("Exp4j engine initialized successfully with {} initial bindings.", initialBindings.size());
     }
 
+    /**
+     * Evaluates a mathematical expression string using the current context combined
+     * with any additional variable bindings provided for this evaluation.
+     *
+     * <p>If the expression has not been compiled before, it is compiled and cached.
+     * Variables are extracted via regex and registered with the expression builder.</p>
+     *
+     * <p>Variables present in the expression are assigned values from the context
+     * if they are numbers; unsupported types or missing variables will generate warnings.</p>
+     *
+     * @param expressionString the expression to evaluate
+     * @param currentBindings optional map of variable bindings specific to this evaluation, can be null
+     * @return the evaluation result as a {@link BigDecimal}
+     * @throws RuntimeException if the expression compilation or evaluation fails
+     */
     @Override
     public BigDecimal evaluate(String expressionString, Map<String, Object> currentBindings) {
         if (currentBindings != null) {
@@ -77,6 +113,12 @@ public class Exp4JCalculationEngine implements ICalculationEngine {
         return BigDecimal.valueOf(result);
     }
 
+    /**
+     * Sets or updates the value of a variable in the current context.
+     *
+     * @param name  the variable name
+     * @param value the variable value
+     */
     @Override
     public void setVariable(String name, Object value) {
         if (currentExp4jContext != null) {

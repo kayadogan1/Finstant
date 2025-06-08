@@ -15,13 +15,30 @@ import rate.RateDto;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Configuration class for Kafka consumer setup.
+ * <p>
+ * This class sets up the Kafka consumer factory and listener container factory
+ * with necessary configurations such as bootstrap servers, group ID, and deserializers.
+ * It is responsible for consuming messages of type {@link RateDto} from Kafka topics.
+ * </p>
+ */
 @Configuration
 @ConfigurationProperties
 public class KafkaConsumerConfig {
 
+    /**
+     * Kafka bootstrap servers URL(s), injected from application properties.
+     */
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    /**
+     * Creates a {@link ConsumerFactory} bean configured to deserialize keys as Strings
+     * and values as JSON objects of type {@link RateDto}.
+     *
+     * @return a configured {@link ConsumerFactory} for Kafka consumers.
+     */
     @Bean
     public ConsumerFactory<String, RateDto> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -34,6 +51,16 @@ public class KafkaConsumerConfig {
                 new JsonDeserializer<>(RateDto.class));
     }
 
+    /**
+     * Creates a {@link ConcurrentKafkaListenerContainerFactory} bean that uses the
+     * {@link ConsumerFactory} to create Kafka listener containers.
+     * <p>
+     * This factory supports concurrent consumption of Kafka messages and
+     * is used by Spring's {@code @KafkaListener} annotations.
+     * </p>
+     *
+     * @return a configured {@link ConcurrentKafkaListenerContainerFactory}.
+     */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, RateDto> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, RateDto> factory =

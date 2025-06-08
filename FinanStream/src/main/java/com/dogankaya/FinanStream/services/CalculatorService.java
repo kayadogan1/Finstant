@@ -25,6 +25,12 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service for calculating financial rates based on formulas and dependencies.
+ *
+ * <p>This service loads formulas, initializes the calculation engine, reads raw and calculated rates
+ * from Redis, calculates dependent rates, and publishes updated rates to Kafka.</p>
+ */
 @Service
 public class CalculatorService {
     private final Logger logger = LogManager.getLogger();
@@ -42,6 +48,15 @@ public class CalculatorService {
     private final Map<String, String> formulas = new HashMap<>();
     private final Map<String, List<String>> dependsOn = new HashMap<>();
 
+    /**
+     * Constructor for CalculatorService.
+     *
+     * @param redisTemplate         RedisTemplate used to access Redis storage.
+     * @param kafkaProducer         KafkaProducer used to send calculated rates.
+     * @param objectMapper          ObjectMapper for JSON serialization/deserialization.
+     * @param resourceLoader        ResourceLoader for loading configuration files.
+     * @param finanStreamProperties Properties containing configuration such as rates config path.
+     */
     public CalculatorService(RedisTemplate<String, Object> redisTemplate, KafkaProducer kafkaProducer,
                              ObjectMapper objectMapper,
                              ResourceLoader resourceLoader,
@@ -54,6 +69,13 @@ public class CalculatorService {
         this.ratesConfigFilePath = finanStreamProperties.getRatesConfigPath();
     }
 
+    /**
+     * Initializes the service after construction.
+     *
+     * <p>Loads formulas from configuration and initializes the calculation engine based on the configured type.</p>
+     *
+     * @throws Exception if loading formulas or initializing the engine fails.
+     */
     @PostConstruct
     public void init() throws Exception {
         logger.info("Initializing CalculatorService");
@@ -61,6 +83,11 @@ public class CalculatorService {
         initializeCalculationEngine();
     }
 
+    /**
+     * Loads rate formulas and their dependencies from the configuration file.
+     *
+     * @throws Exception if there is an error reading the configuration resource.
+     */
     private void loadFormulasFromConfig() throws Exception {
         Resource resource = resourceLoader.getResource(ratesConfigFilePath);
 
@@ -93,6 +120,11 @@ public class CalculatorService {
         }
     }
 
+    /**
+     * Initializes the calculation engine based on the configured engine type.
+     *
+     * <p>Supports "groovy" and "exp4j" engine types. Throws exception for unsupported types.</p>
+     */
     private void initializeCalculationEngine() {
         switch (engineType) {
             case "groovy":
@@ -107,6 +139,12 @@ public class CalculatorService {
         logger.info("Using calculation engine: {}", this.calculationEngine.getName());
     }
 
+    /**
+     * Loads raw rate data from Redis.
+     *
+     * @return map of rate names to their {@link RateDto} raw values.
+     * @throws RuntimeException if reading from Redis fails.
+     */
     private Map<String, RateDto> loadRawRatesFromRedis() {
         try {
             return hashOperations.entries("raw_rates");
@@ -115,6 +153,12 @@ public class CalculatorService {
         }
     }
 
+    /**
+     * Loads calculated rate data from Redis.
+     *
+     * @return map of rate names to their {@link RateDto} calculated values.
+     * @throws RuntimeException if reading from Redis fails.
+     */
     private Map<String, RateDto> loadCalculatedRatesFromRedis() {
         try {
             return hashOperations.entries("calculated_rates");
@@ -123,12 +167,28 @@ public class CalculatorService {
         }
     }
 
+    /**
+     * Adds rate ask and bid values to the current bindings map for formula evaluation.
+     *
+     * @param currentBindings the current bindings map where variables are stored.
+     * @param key             the rate name key.
+     * @param dto             the {@link RateDto} containing ask and bid values.
+     */
     private void addBinding(Map<String, Object> currentBindings, String key, RateDto dto){
         currentBindings.put(key, dto.getAsk());
         currentBindings.put(key + "_ask", dto.getAsk());
         currentBindings.put(key + "_bid", dto.getBid());
     }
 
+    /**
+     * Recursively resolves and calculates a rate formula and its dependencies.
+     *
+     * <p>Updates the calculated rates map and sends updates to Kafka and Redis.</p>
+     *
+     * @param key        the formula key to resolve.
+     * @param raw        the raw rates map.
+     * @param calculated the calculated rates map to update.
+     */
     private void resolve(String key, Map<String, RateDto> raw, Map<String, RateDto> calculated) {
         String baseKey = key;
         if(key.endsWith("_ask") || key.endsWith("_bid")){
@@ -208,6 +268,14 @@ public class CalculatorService {
         hashOperations.put("calculated_rates", baseKey, dto);
     }
 
+    /**
+     * Calculates all rates affected by a given updated {@link RateDto}.
+     *
+     * <p>Loads raw and calculated rates from Redis, determines which formulas depend on the updated rate,
+     * evaluates these formulas, and updates the calculated rates.</p>
+     *
+     * @param rateDto the updated raw rate that may affect calculated rates.
+     */
     public void calculateAffectedRates(RateDto rateDto) {
         Map<String, RateDto> raw = loadRawRatesFromRedis();
         Map<String, RateDto> calculated = loadCalculatedRatesFromRedis();
@@ -241,6 +309,21 @@ public class CalculatorService {
         toCalculateList.forEach(key -> resolve(key, raw, calculated));
     }
 
+    /**
+     * Determines whether the given rate key is affected by the specified RateDto,
+     * either directly or indirectly through dependencies.
+     * <p>
+     * This method recursively checks if the provided key or any of its dependencies
+     * match the rate name from the given RateDto. If a match is found, the related
+     * entries are removed from the provided calculated rates and initial bindings maps.
+     * </p>
+     *
+     * @param key             the rate key to check for dependency on the given RateDto
+     * @param rateDto         the RateDto object containing the rate name to check against dependencies
+     * @param calculated      the map of currently calculated rates that may be modified
+     * @param initialBindings the map of initial variable bindings that may be modified
+     * @return true if the key is affected by the rateDto (directly or indirectly), otherwise false
+     */
     private boolean isAffectedRate(String key, RateDto rateDto, Map<String, RateDto> calculated, Map<String, Object> initialBindings) {
         if(key.equals(rateDto.getRateName())){
             calculated.remove(key);
