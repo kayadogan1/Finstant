@@ -43,10 +43,19 @@ public class TelnetServerHandler implements Runnable {
         objectMapper.registerModule(javaTimeModule);
     }
 
+    /**
+     * Constructs a new {@code TelnetServerHandler} for the given client socket.
+     *
+     * @param socket the connected client socket
+     */
     public TelnetServerHandler(Socket socket) {
         this.clientSocket = socket;
     }
 
+    /**
+     * Runs the client handler thread, reading commands from the client socket,
+     * processing subscription requests, unsubscriptions, and exit commands.
+     */
     @Override
     public void run() {
         try {
@@ -65,6 +74,12 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
+    /**
+     * Parses and processes a single command string received from the client.
+     * Supported commands are "subscribe|ticker", "unsubscribe|ticker", and "exit".
+     *
+     * @param command the raw command string from the client
+     */
     private void processCommand(String command) {
         command = command.trim();
         if (command.startsWith("subscribe|")) {
@@ -85,6 +100,12 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
+    /**
+     * Subscribes the client to market data updates for the given ticker.
+     * Validates ticker support and notifies client of subscription status.
+     *
+     * @param tickerString the ticker name string
+     */
     private void subscribe(String tickerString) {
         TickerType tickerEnum = TickerType.fromString(tickerString);
 
@@ -109,6 +130,12 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
+    /**
+     * Unsubscribes the client from market data updates for the given ticker.
+     * Notifies client of unsubscription status.
+     *
+     * @param tickerString the ticker name string
+     */
     private void unsubscribe(String tickerString) {
         TickerType tickerEnum = TickerType.fromString(tickerString);
 
@@ -134,6 +161,11 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
+    /**
+     * Sends a message back to the connected client.
+     *
+     * @param message the message string to send
+     */
     public void sendResponse(String message) {
         if (out != null && !clientSocket.isClosed()) {
             out.println(message);
@@ -141,6 +173,12 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
+    /**
+     * Distributes a {@link RateDto} market data update to all clients subscribed to its ticker.
+     * Serializes the data to JSON before sending.
+     *
+     * @param data the market data update to distribute
+     */
     public static void distributeMarketData(RateDto data) {
         String ticker = data.getRateName();
 
@@ -157,6 +195,10 @@ public class TelnetServerHandler implements Runnable {
         }
     }
 
+    /**
+     * Cleans up resources when the client disconnects.
+     * Removes this handler from all subscription lists and closes streams and sockets.
+     */
     private void cleanup() {
         logger.info("Client disconnected: {}", clientSocket.getInetAddress());
         for (String ticker : new HashSet<>(subscribedTickers)) {

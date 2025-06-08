@@ -12,6 +12,9 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
 
+/**
+ * Represents a financial rate document for elastichsearch with bid and ask prices,timestamps and an identifier
+ */
 @Data
 @Builder
 @NoArgsConstructor

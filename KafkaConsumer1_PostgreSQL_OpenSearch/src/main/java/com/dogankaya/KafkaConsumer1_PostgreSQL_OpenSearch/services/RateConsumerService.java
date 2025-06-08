@@ -13,6 +13,18 @@ import rate.Rate;
 
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Service class responsible for consuming RateDto messages from Kafka,
+ * persisting them into PostgreSQL database, and indexing into OpenSearch.
+ * <p>
+ * This service listens to the Kafka topic "rate-topic" with concurrency level 6,
+ * converts incoming {@link RateDto} objects into {@link Rate} and {@link RateDocument}
+ * entities, saves them to respective repositories, and logs the operations.
+ * </p>
+ * <p>
+ * Scheduling is enabled to support any future scheduled tasks if needed.
+ * </p>
+ */
 @Service
 @EnableScheduling
 public class RateConsumerService {
@@ -21,12 +33,24 @@ public class RateConsumerService {
     private final RateSearchRepository rateSearchRepository;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
 
-
+    /**
+     * Constructor with dependencies injected by Spring.
+     *
+     * @param rateRepository        Repository for saving Rate entities in PostgreSQL.
+     * @param rateSearchRepository  Repository for indexing RateDocument entities in OpenSearch.
+     */
     public RateConsumerService(RateRepository rateRepository, RateSearchRepository rateSearchRepository) {
         this.rateRepository = rateRepository;
         this.rateSearchRepository = rateSearchRepository;
     }
 
+    /**
+     * Kafka listener method that consumes {@link RateDto} messages from the "rate-topic".
+     * Converts the DTO to database and search document entities, saves them,
+     * and logs the operation.
+     *
+     * @param rateDto the incoming RateDto message from Kafka.
+     */
     @KafkaListener(topics = "rate-topic", groupId = "rate-group", concurrency = "6")
     public void consumeRate(RateDto rateDto) {
         Rate rate = Rate.builder()
@@ -47,6 +71,7 @@ public class RateConsumerService {
                 .dbUpdateTime(rateDto.getRateUpdateTime().format(formatter))
                 .build();
         rateSearchRepository.save(rateDocument);
-        logger.info("Rate:{} saved and sended opensearch", rate.getRateName());
+
+        logger.info("Rate:{} saved and sent to OpenSearch", rate.getRateName());
     }
 }
