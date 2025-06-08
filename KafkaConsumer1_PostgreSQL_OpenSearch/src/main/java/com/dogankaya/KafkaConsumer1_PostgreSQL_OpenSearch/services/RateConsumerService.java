@@ -27,7 +27,7 @@ public class RateConsumerService {
         this.rateSearchRepository = rateSearchRepository;
     }
 
-    @KafkaListener(topics = "rate-topic", groupId = "rate-group")
+    @KafkaListener(topics = "rate-topic", groupId = "rate-group", concurrency = "6")
     public void consumeRate(RateDto rateDto) {
         Rate rate = Rate.builder()
                 .rateName(rateDto.getRateName())

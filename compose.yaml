@@ -17,12 +17,19 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - finstant-network
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
       - "9092:9092"
     environment:
@@ -31,6 +38,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "rate-topic:6:1"
     networks:
       - finstant-network
     healthcheck:
@@ -73,7 +81,7 @@ services:
     networks:
       - finstant-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"'"]
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"yellow\"'"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -138,6 +146,8 @@ services:
       - "8083:8083"
     depends_on:
       kafka:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finanstream
