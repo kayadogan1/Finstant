@@ -112,6 +112,7 @@ services:
       - RATES_CONFIG_PATH=file:/app/rates.properties
       - FINANSTREAM_PLATFORMS_PLATFORM1_HOST=platform1
       - FINANSTREAM_PLATFORMS_PLATFORM2_HOST=platform2
+      - FINANSTREAM_ENGINE_TYPE=exp4j
       - SPRING_DATA_REDIS_HOST=redis
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     networks:
