@@ -35,7 +35,7 @@ Bu adımlardan sonra uygulamanın çalışıyor olması gerekir.
 
 ## EKRANLAR
 
-Ana uygulamanın port bilgisi ve swagger arayüzü
+### Ana uygulamanın port bilgisi ve swagger arayüzü
 >8082/swagger-ui/index.html
 >
 ![Ana uygulama abonelik islemi](docs/ana-uygulama-subscribe.jpeg)
@@ -46,7 +46,21 @@ Platform2 rest port bilgisi ve swagger arayüzü
 >8080/swagger-ui/index.html
 >
 ![platform2_rest abonelik islemi](docs/platform2-rest-subsribe.jpeg)
-Kibana port bilgisi ve dashboard  
+### Telnet  port bilgisi ve terminal kullanımı
+
+Telnet Platformuna terminal üzerinden bağlamak ya da disconnect olmak
+isterseniz sadece şu işlemler yeterli:
+> telnet localhost 8081
+> 
+> exit
+> 
+Aynı zamanda herhangi bir orana abone olmak ya da abonelikten çıkmak isterseniz şu işlemler yapılmalı:
+> subscribe|pf1_usdtry
+> 
+> unsubscribe|pf1_usdtry
+> 
+![telnet_islemler](/docs/telnet-islemler.png)
+### Kibana port bilgisi ve dashboard
 >5601/app/dashboard
 >
 ![Kibana](docs/kibana.jpeg)
