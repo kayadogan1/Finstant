@@ -61,6 +61,6 @@ Aynı zamanda herhangi bir orana abone olmak ya da abonelikten çıkmak istersen
 > 
 ![telnet_islemler](/docs/telnet-islemler.png)
 ### Kibana port bilgisi ve dashboard
->5601/app/dashboard
+>5601/app/dashboards
 >
 ![Kibana](docs/kibana.jpeg)
